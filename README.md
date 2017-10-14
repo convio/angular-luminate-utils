@@ -11,10 +11,11 @@ used both within and outside of Luminate Online.
 
 - [Basic Setup](#basic-setup)
 - [Including ngLuminateUtils In Your App](#including-ngLuminateUtils-in-your-app)
-- [Configuration With $luminateUtilsConfig](#configuration-with-$luminateUtilsConfig)
-- [API Requests With $luminateRest](#api-requests-with-$luminateRest)
-- [Evaluating Template Tages With $luminateTemplateTag](#evaluating-template-tags-with-$luminateTemplateTag)
-- [Managing Session Variables With $luminateSessionVar](#managing-session-variables-with-$luminateSessionVar)
+- [Configuration With $luminateUtilsConfig](#configuration-with-luminateutilsconfig)
+- [API Requests With $luminateRest](#api-requests-with-luminaterest)
+- [A Note on Third-Party Cookies](#a-note-on-third-party-cookies)
+- [Evaluating Template Tages With $luminateTemplateTag](#evaluating-template-tags-with-luminatetemplatetag)
+- [Managing Session Variables With $luminateSessionVar](#managing-session-variables-with-luminatesessionvar)
 - [Browser Support](#browser-support)
 - [Reporting Issues](#reporting-issues)
 
@@ -40,7 +41,7 @@ Before getting started, there are a couple of basic steps you must follow:
 ## Including ngLuminateUtils In Your App
 
 Once you've uploaded 
-[angular-luminate-utils.min.js](https://github.com/noahcooper/angular-luminate-utils/blob/master/angular-luminate-utils.min.js) 
+[angular-luminate-utils.min.js](https://github.com/noahcooper/angular-luminate-utils/blob/master/dist/js/angular-luminate-utils.min.js) 
 to your website, including the library is easy &mdash; just add it somewhere below Angular. 
 (Change out the file path as needed, depending on where you uploaded the file on your site.)
 
@@ -114,6 +115,28 @@ $luminateRest.request('cons', 'method=getUser', true, false);
 
 Some API servlets (namely CRDonationAPI and CRTeamraiserAPI) must always be called over a secure channel, in 
 which case this option is ignored. **Note that this option will be deprecated in a future version of this library.**
+
+## A Note on Third-Party Cookies
+
+Some browsers, such as Internet Explorer and Safari, default to blocking third-party cookies from websites 
+which the user has not visited. This can impact the ability to make some cross-domain requests that involve 
+authentication. For example, if a user visits a website your organization hosts outside of Luminate Online 
+before they ever visit a Luminate Online page, and you attempt to log them in by calling the login API method, 
+their authentication token will be unusable because the associated session cookie is not sent in subsequent 
+requests. To prevent this issue, it is recommended to use a client-side redirect after successful login to 
+force a session and cookie to be established.
+
+``` js
+$scope.submitLogin = function() {
+  $luminateRest.request('cons', $httpParamSerializer($scope.loginInfo)).then(function(response) {
+    if (!response.data.loginResponse || !response.loginResponse.nonce) {
+      $scope.showLoginError = true;
+    } else {
+      $window.location.href = $luminateUtilsConfig.path.secure + 'EstablishSession?NONCE_TOKEN=' + response.loginResponse.nonce + '&NEXTURL=' + encodeURIComponent($location.absUrl())
+    }
+  });
+};
+```
 
 ## Evaluating Template Tages With $luminateTemplateTag
 
