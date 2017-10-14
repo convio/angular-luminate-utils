@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.1.0'
+    version: '0.2.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -37,17 +37,16 @@
   angular.module('ngLuminateUtils').factory('$luminateRest', [
     '$http', '$q', '$timeout', 'APP_INFO', '$luminateUtilsConfig', function($http, $q, $timeout, APP_INFO, $luminateUtilsConfig) {
       return {
-        getAuthToken: function(forceNewToken) {
+        getAuthToken: function(forceNewToken, useHTTP) {
           var _this, requestData;
           _this = this;
           if (!_this.authToken || forceNewToken) {
             _this.authTokenPending = true;
             requestData = 'method=getLoginUrl';
-            if (_this.nonce) {
-              requestData += '&NONCE_TOKEN=' + _this.nonce;
-              _this.nonce = null;
-            }
-            return _this.request('cons', requestData).then(function(response) {
+            return _this.request({
+              api: 'cons',
+              data: requestData
+            }).then(function(response) {
               var ref, ref1, ref2;
               _this.routingId = (ref = response.data.getLoginUrlResponse) != null ? ref.routing_id : void 0;
               _this.jsessionId = (ref1 = response.data.getLoginUrlResponse) != null ? ref1.JSESSIONID : void 0;
@@ -60,12 +59,22 @@
             return $q.resolve(_this.authToken);
           }
         },
-        request: function(apiServlet, requestData, requiresAuth, useHTTPS) {
-          var _requestData, _this, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestUrl;
-          if (useHTTPS == null) {
-            useHTTPS = true;
+        request: function(options) {
+          var _this, apiServlet, contentType, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestData, requestUrl, requiresAuth, settings, useHTTP;
+          if (options == null) {
+            options = {};
           }
           _this = this;
+          settings = options;
+          apiServlet = settings.api;
+          requestData = settings.data;
+          requiresAuth = settings.requiresAuth;
+          useHTTP = settings.useHTTP;
+          contentType = settings.contentType;
+          if ((contentType != null ? contentType.split(';')[0] : void 0) !== 'multipart/form-data') {
+            contentType = 'application/x-www-form-urlencoded';
+          }
+          contentType += '; charset=UTF-8';
           if (!apiServlet) {
             return new Error('You must specify an API servlet.');
           } else {
@@ -78,63 +87,61 @@
             } else if (!requestData) {
               return new Error('You must specify request data.');
             } else {
-              _requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey;
-              isAuthTokenRequest = _requestData.indexOf('&method=getLoginUrl&') !== -1;
-              isLoginRequest = _requestData.indexOf('&method=login&') !== -1;
-              isLogoutRequest = _requestData.indexOf('&method=logout&') !== -1;
+              requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey;
+              isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') !== -1;
+              isLoginRequest = requestData.indexOf('&method=login&') !== -1;
+              isLogoutRequest = requestData.indexOf('&method=logout&') !== -1;
               if (!isAuthTokenRequest && !_this.authToken) {
                 if (!_this.authTokenPending) {
-                  return _this.getAuthToken().then(function() {
-                    return _this.request(apiServlet, requestData, requiresAuth);
+                  return _this.getAuthToken(false, useHTTP).then(function() {
+                    return _this.request(options);
                   });
                 } else {
                   return $timeout(function() {
-                    return _this.request(apiServlet, requestData, requiresAuth);
+                    return _this.request(options);
                   }, 500);
                 }
               } else {
                 if (apiServlet === 'CRDonation' || apiServlet === 'CRTeamraiserAPI') {
-                  useHTTPS = true;
+                  useHTTP = false;
                 }
-                if (!useHTTPS) {
-                  requestUrl = $luminateUtilsConfig.path.nonsecure;
-                } else {
+                if (!useHTTP) {
                   requestUrl = $luminateUtilsConfig.path.secure;
+                } else {
+                  requestUrl = $luminateUtilsConfig.path.nonsecure;
                 }
                 requestUrl += apiServlet;
-                if (_this.routingId && _this.routingId !== '') {
-                  requestUrl += ';' + _this.routingId;
+                if (_this.routingId) {
+                  requestUrl += ';jsessionid=' + _this.routingId;
                 }
                 if (requiresAuth) {
-                  _requestData += '&auth=' + _this.authToken;
+                  requestData += '&auth=' + _this.authToken;
                 }
                 if (_this.jsessionId) {
-                  _requestData += '&JSESSIONID=' + _this.jsessionId;
+                  requestData += '&JSESSIONID=' + _this.jsessionId;
                 }
                 if ($luminateUtilsConfig.defaultRequestData) {
-                  _requestData += '&' + $luminateUtilsConfig.defaultRequestData;
+                  requestData += '&' + $luminateUtilsConfig.defaultRequestData;
                 }
                 if (APP_INFO != null ? APP_INFO.version : void 0) {
-                  _requestData += '&ng_luminate_utils=' + APP_INFO.version;
+                  requestData += '&ng_luminate_utils=' + APP_INFO.version;
                 }
+                requestData += '&ts=' + new Date().getTime();
                 return $http({
                   method: 'POST',
                   url: requestUrl,
-                  data: _requestData,
+                  data: requestData,
                   headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    'Content-Type': contentType
                   },
                   withCredentials: true
                 }).then(function(response) {
-                  var _response, ref1;
+                  var _response;
                   _response = response;
                   if (!isLoginRequest && !isLogoutRequest) {
                     return _response;
                   } else {
-                    if (isLoginRequest) {
-                      _this.nonce = (ref1 = _response.loginResponse) != null ? ref1.nonce : void 0;
-                    }
-                    return _this.getAuthToken(true).then(function() {
+                    return _this.getAuthToken(true, useHTTP).then(function() {
                       return _response;
                     });
                   }
@@ -170,7 +177,11 @@
             deferred.resolve('');
             return deferred.promise;
           } else {
-            return $luminateRest.request('content', 'method=getTagInfo&content=' + tag, true).then(function(response) {
+            return $luminateRest.request({
+              api: 'content',
+              data: 'method=getTagInfo&content=' + tag,
+              requiresAuth: true
+            }).then(function(response) {
               var parsedTag, ref;
               parsedTag = ((ref = response.data.getTagInfoResponse) != null ? ref.preview : void 0) || '';
               return $q.resolve(parsedTag);

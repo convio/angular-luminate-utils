@@ -84,13 +84,26 @@ $luminateUtilsConfigProvider.setDefaultRequestData('source=MySourceCode');
 The `$luminateRest` service is the heart of the library. It provides methods for making AJAX requests to the 
 Luminate Online REST API, with automatic handling of authentication tokens for methods that require it.
 
-The `request` method accepts either a full, case-sensitive API servlet name, e.g. "CRConsAPI", or a 
-case-insensitive shorthand with "CR" and "API" removed, e.g. "cons". The api_key, response_format, 
-suppress_response_codes, and v parameters are automatically appended to the request data provided.
+The request method accepts one argument, an options object.
+
+| property      | description |
+| ------------ | ----------- |
+| api          | Either a full, case-sensitive API servlet name, e.g. "CRConsAPI", or a case-insensitive shorthand with "CR" and "API" removed, e.g. "cons". |
+| data         | The data string to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
+| requiresAuth | A Boolean indicating whether or not the API method being called requires authentication. If true, an auth token is automatically appended to the request data. |
+| contentType  | The Content-Type for the request, either "application/x-www-form-urlencoded", the default, or "multipart/form-data". |
+| useHTTP      | By default, all API requests are made over HTTPS. Setting this Boolean to true will cause the request to use HTTP. Some API servlets (namely CRDonationAPI and CRTeamraiserAPI) must always be called over a secure channel, in which case this option is ignored. **Note that this will be deprecated in a future version of this library.** |
+
+### Examples
+
+Check if the user is logged in:
 
 ``` js
 angular.module('myApp').controller('myCtrl', ['$scope', '$luminateRest', function($scope, $luminateRest) {
-  $luminateRest.request('cons', 'method=loginTest').then(function(response) {
+  $luminateRest.request({
+    api: 'cons', 
+    data: 'method=loginTest'
+  }).then(function(response) {
     if (response.data.loginResponse && response.data.loginResponse.cons_id && response.data.loginResponse.cons_id > 0) {
       $scope.loggedIn = true;
     } else {
@@ -100,39 +113,57 @@ angular.module('myApp').controller('myCtrl', ['$scope', '$luminateRest', functio
 }]);
 ```
 
-The third argument passed to the request method is a Boolean indicating whether or not the API method being 
-called requires authentication. If true, an auth token is automatically appended to the request data.
+Get the logged in user's constituent record:
 
 ``` js
-$luminateRest.request('cons', 'method=getUser', true);
+$luminateRest.request({
+  api: 'cons', 
+  data: 'method=getUser', 
+  requiresAuth: true
+}).then(function(response) {
+  if (response.data.getConsResponse) {
+    $scope.constituent = response.data.getConsResponse;
+  }
+});
 ```
 
-By default, all API requests are made over HTTPS. Optionally, you can pass a fourth argument to force HTTP.
+Submit a donation form:
 
 ``` js
-$luminateRest.request('cons', 'method=getUser', true, false);
+$scope.submitDonation = function() {
+  $luminateRest.request({
+    api: 'donation', 
+    data: $httpParamSerializer($scope.donationInfo)
+  }).then(function(response) {
+    if (response.data.errorResponse || (response.data.donationResponse && response.data.donationResponse.errors)) {
+      $scope.showDonationError = true;
+    } else {
+      $scope.showDonationSuccess = true;
+    }
+  });
+};
 ```
-
-Some API servlets (namely CRDonationAPI and CRTeamraiserAPI) must always be called over a secure channel, in 
-which case this option is ignored. **Note that this option will be deprecated in a future version of this library.**
 
 ## A Note on Third-Party Cookies
 
 Some browsers, such as Internet Explorer and Safari, default to blocking third-party cookies from websites 
 which the user has not visited. This can impact the ability to make some cross-domain requests that involve 
 authentication. For example, if a user visits a website your organization hosts outside of Luminate Online 
-before they ever visit a Luminate Online page, and you attempt to log them in by calling the login API method, 
-their authentication token will be unusable because the associated session cookie is not sent in subsequent 
-requests. To prevent this issue, it is recommended to use a client-side redirect after successful login to 
-force a session and cookie to be established.
+before they ever visit a Luminate Online page, and logs in using the login API method, no session cookie will 
+be set, and on subsequent visits they will not be recognized as logged in. To prevent this issue, it is 
+recommended to use a client-side redirect after successful login to force a session cookie to be set. The login 
+method returns a nonce for just this purpose.
 
 ``` js
 $scope.submitLogin = function() {
-  $luminateRest.request('cons', $httpParamSerializer($scope.loginInfo)).then(function(response) {
-    if (!response.data.loginResponse || !response.loginResponse.nonce) {
+  $luminateRest.request({
+    api: 'cons', 
+    data: $httpParamSerializer($scope.loginInfo)
+  }).then(function(response) {
+    if (!response.data.loginResponse || !response.data.loginResponse.nonce) {
       $scope.showLoginError = true;
     } else {
-      $window.location.href = $luminateUtilsConfig.path.secure + 'EstablishSession?NONCE_TOKEN=' + response.loginResponse.nonce + '&NEXTURL=' + encodeURIComponent($location.absUrl())
+      $window.location.href = $luminateUtilsConfig.path.secure + 'EstablishSession?NONCE_TOKEN=' + response.data.loginResponse.nonce + '&NEXTURL=' + encodeURIComponent($location.absUrl());
     }
   });
 };

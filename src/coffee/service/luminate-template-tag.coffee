@@ -9,8 +9,11 @@ angular.module 'ngLuminateUtils'
           deferred.resolve ''
           deferred.promise
         else
-          $luminateRest.request 'content', 'method=getTagInfo&content=' + tag, true
-            .then (response) ->
-              parsedTag = response.data.getTagInfoResponse?.preview or ''
-              $q.resolve parsedTag
+          $luminateRest.request
+            api: 'content'
+            data: 'method=getTagInfo&content=' + tag
+            requiresAuth: true
+          .then (response) ->
+            parsedTag = response.data.getTagInfoResponse?.preview or ''
+            $q.resolve parsedTag
   ]

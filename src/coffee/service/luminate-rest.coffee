@@ -6,27 +6,35 @@ angular.module 'ngLuminateUtils'
     'APP_INFO'
     '$luminateUtilsConfig'
     ($http, $q, $timeout, APP_INFO, $luminateUtilsConfig) ->
-      getAuthToken: (forceNewToken) ->
+      getAuthToken: (forceNewToken, useHTTP) ->
         _this = this
         if not _this.authToken or forceNewToken
           _this.authTokenPending = true
           requestData = 'method=getLoginUrl'
-          if _this.nonce
-            requestData += '&NONCE_TOKEN=' + _this.nonce
-            _this.nonce = null
-          _this.request 'cons', requestData
-            .then (response) ->
-              _this.routingId = response.data.getLoginUrlResponse?.routing_id
-              _this.jsessionId = response.data.getLoginUrlResponse?.JSESSIONID
-              _this.authToken = response.data.getLoginUrlResponse?.token or ''
-              _this.authTokenPending = false
-              $q.resolve _this.authToken
+          _this.request
+            api: 'cons'
+            data: requestData
+          .then (response) ->
+            _this.routingId = response.data.getLoginUrlResponse?.routing_id
+            _this.jsessionId = response.data.getLoginUrlResponse?.JSESSIONID
+            _this.authToken = response.data.getLoginUrlResponse?.token or ''
+            _this.authTokenPending = false
+            $q.resolve _this.authToken
         else
           _this.authTokenPending = false
           $q.resolve _this.authToken
       
-      request: (apiServlet, requestData, requiresAuth, useHTTPS = true) ->
+      request: (options = {}) ->
         _this = this
+        settings = options
+        apiServlet = settings.api
+        requestData = settings.data
+        requiresAuth = settings.requiresAuth
+        useHTTP = settings.useHTTP
+        contentType = settings.contentType
+        if contentType?.split(';')[0] isnt 'multipart/form-data'
+          contentType = 'application/x-www-form-urlencoded'
+        contentType += '; charset=UTF-8'
         if not apiServlet
           new Error 'You must specify an API servlet.'
         else
@@ -38,52 +46,51 @@ angular.module 'ngLuminateUtils'
           else if not requestData
             new Error 'You must specify request data.'
           else
-            _requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey
-            isAuthTokenRequest = _requestData.indexOf('&method=getLoginUrl&') isnt -1
-            isLoginRequest = _requestData.indexOf('&method=login&') isnt -1
-            isLogoutRequest = _requestData.indexOf('&method=logout&') isnt -1  
+            requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey
+            isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') isnt -1
+            isLoginRequest = requestData.indexOf('&method=login&') isnt -1
+            isLogoutRequest = requestData.indexOf('&method=logout&') isnt -1  
             if not isAuthTokenRequest and not _this.authToken
               if not _this.authTokenPending
-                _this.getAuthToken()
+                _this.getAuthToken false, useHTTP
                   .then ->
-                    _this.request apiServlet, requestData, requiresAuth
+                    _this.request options
               else
                 $timeout ->
-                  _this.request apiServlet, requestData, requiresAuth
+                  _this.request options
                 , 500
             else
               if apiServlet in ['CRDonation', 'CRTeamraiserAPI']
-                useHTTPS = true
-              if not useHTTPS
-                requestUrl = $luminateUtilsConfig.path.nonsecure
-              else
+                useHTTP = false
+              if not useHTTP
                 requestUrl = $luminateUtilsConfig.path.secure
+              else
+                requestUrl = $luminateUtilsConfig.path.nonsecure
               requestUrl += apiServlet
               if _this.routingId
-                requestUrl += ';' + _this.routingId
+                requestUrl += ';jsessionid=' + _this.routingId
               if requiresAuth
-                _requestData += '&auth=' + _this.authToken
+                requestData += '&auth=' + _this.authToken
               if _this.jsessionId
-                _requestData += '&JSESSIONID=' + _this.jsessionId
+                requestData += '&JSESSIONID=' + _this.jsessionId
               if $luminateUtilsConfig.defaultRequestData
-                _requestData += '&' + $luminateUtilsConfig.defaultRequestData
+                requestData += '&' + $luminateUtilsConfig.defaultRequestData
               if APP_INFO?.version
-                _requestData += '&ng_luminate_utils=' + APP_INFO.version
+                requestData += '&ng_luminate_utils=' + APP_INFO.version
+              requestData += '&ts=' + new Date().getTime()
               $http
                 method: 'POST'
                 url: requestUrl
-                data: _requestData
+                data: requestData
                 headers:
-                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' # TODO: allow content-type to be specified
+                  'Content-Type': contentType
                 withCredentials: true
               .then (response) ->
                 _response = response
                 if not isLoginRequest and not isLogoutRequest
                   _response
                 else
-                  if isLoginRequest
-                    _this.nonce = _response.loginResponse?.nonce
-                  _this.getAuthToken true
+                  _this.getAuthToken true, useHTTP
                     .then ->
                       _response
   ]
