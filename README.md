@@ -15,6 +15,7 @@ used both within and outside of Luminate Online.
 - [API Requests With $luminateRest](#api-requests-with-luminaterest)
 - [A Note on Third-Party Cookies](#a-note-on-third-party-cookies)
 - [Evaluating Template Tages With $luminateTemplateTag](#evaluating-template-tags-with-luminatetemplatetag)
+- [Including Reusable Content With the luminate-reusable Directive](#including-reusable-content-with-the-luminate-reusable-directive)
 - [Managing Session Variables With $luminateSessionVar](#managing-session-variables-with-luminatesessionvar)
 - [Browser Support](#browser-support)
 - [Reporting Issues](#reporting-issues)
@@ -84,7 +85,8 @@ $luminateUtilsConfigProvider.setDefaultRequestData('source=MySourceCode');
 The `$luminateRest` service is the heart of the library. It provides methods for making AJAX requests to the 
 Luminate Online REST API, with automatic handling of authentication tokens for methods that require it.
 
-The request method accepts one argument, an options object.
+The `request` method accepts one argument, an options object. It returns a Promise, resolved with the full 
+`$http` response object.
 
 | property      | description |
 | ------------ | ----------- |
@@ -175,12 +177,33 @@ For those occasions when the REST API does not provide a method for retrieving s
 template tag (e.g. S- or E-Tag) exists that meets the need, the `$luminateTemplateTag` service can be used to 
 evaluate a tag client-side. 
 
+The `parse` method accepts one argument, a template tag. It returns a Promise, resolved with the value of the 
+specified tag.
+
 ``` js
 angular.module('myApp').controller('myCtrl', ['$scope', '$luminateTemplateTag', function($scope, $luminateTemplateTag) {
   $luminateTemplateTag.parse('[[S42:1234:dollars]]').then(function(response) {
     $scope.amountRaised = response;
   });
 }]);
+```
+
+Note that template tags must be expressed in bracket syntax, XML syntax is not allowed. Additionally, to protect 
+against XSS attacks, any HTML tags in the template tag string are removed.
+
+## Including Reusable Content With the luminate-reusable Directive
+
+The `luminate-reusable` directive can be used to render the content of a reusable PageBuilder page. The `pagename` 
+attribute identifies the page to be rendered.
+
+``` html
+<luminate-reusable pagename="'reus_badges'"></luminate-reusable>
+```
+
+The directive can be referenced as an element, or as an attribute.
+
+``` html
+<div luminate-reusable pagename="'reus_badges'"></luminate-reusable>
 ```
 
 ## Managing Session Variables With $luminateSessionVar
@@ -199,6 +222,15 @@ Both the `set` and `get` methods return a Promise, resolved with the value of th
 $luminateSessionVar.get('myVar').then(function(response) {
   $scope.myVar = response;
 });
+```
+
+Note that session variable values passed to the `set` method must be either a string or a Number. To protect against 
+XSS attacks, any HTML tags are removed. Additionally, any HTML tags in the `get` method response are removed.
+
+``` js
+angular.module('myApp').controller('myCtrl', ['$scope', '$luminateSessionVar', function($scope, $luminateSessionVar) {
+  $luminateSessionVar.set('myVar', '<div>foo</div>'); // will set myVar to "foo"
+}]);
 ```
 
 ## Browser Support

@@ -5,7 +5,8 @@ angular.module 'ngLuminateUtils'
     '$timeout'
     'APP_INFO'
     '$luminateUtilsConfig'
-    ($http, $q, $timeout, APP_INFO, $luminateUtilsConfig) ->
+    '$luminateRequestHandler'
+    ($http, $q, $timeout, APP_INFO, $luminateUtilsConfig, $luminateRequestHandler) ->
       getAuthToken: (forceNewToken, useHTTP) ->
         _this = this
         if not _this.authToken or forceNewToken
@@ -35,62 +36,67 @@ angular.module 'ngLuminateUtils'
         if contentType?.split(';')[0] isnt 'multipart/form-data'
           contentType = 'application/x-www-form-urlencoded'
         contentType += '; charset=UTF-8'
-        if not apiServlet
-          new Error 'You must specify an API servlet.'
+        if not $luminateUtilsConfig.path.nonsecure or not $luminateUtilsConfig.path.secure
+          $luminateRequestHandler.rejectInvalidRequest 'You must specify both a nonsecure and secure path.'
+        else if not $luminateUtilsConfig.apiKey
+          $luminateRequestHandler.rejectInvalidRequest 'You must specify both an API Key.'
         else
-          if apiServlet.toLowerCase() in ['addressbook', 'advocacy', 'cons', 'content', 'datasync', 'donation', 'group', 'orgevent', 'recurring', 'survey', 'teamraiser']
-            apiServlet = 'CR' + apiServlet.toLowerCase().charAt(0).toUpperCase() + apiServlet.toLowerCase().slice(1).toLowerCase() + 'API'
-            apiServlet = apiServlet.replace('Addressbook', 'AddressBook').replace('Datasync', 'DataSync').replace 'Orgevent', 'OrgEvent'
-          if apiServlet not in ['CRAddressBookAPI', 'CRAdvocacyAPI', 'CRConsAPI', 'CRContentAPI', 'CRDataSyncAPI', 'CRDonationAPI', 'CRGroupAPI', 'CROrgEventAPI', 'CRRecurringAPI', 'CRSurveyAPI', 'CRTeamraiserAPI']
-            new Error 'Invalid API servlet.'
-          else if not requestData
-            new Error 'You must specify request data.'
+          if not angular.isString apiServlet
+            $luminateRequestHandler.rejectInvalidRequest 'API servlet must be a string but was ' + typeof apiServlet
           else
-            requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey
-            isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') isnt -1
-            isLoginRequest = requestData.indexOf('&method=login&') isnt -1
-            isLogoutRequest = requestData.indexOf('&method=logout&') isnt -1  
-            if not isAuthTokenRequest and not _this.authToken
-              if not _this.authTokenPending
-                _this.getAuthToken false, useHTTP
-                  .then ->
-                    _this.request options
-              else
-                $timeout ->
-                  _this.request options
-                , 500
+            if apiServlet.toLowerCase() in ['addressbook', 'advocacy', 'cons', 'content', 'datasync', 'donation', 'group', 'orgevent', 'recurring', 'survey', 'teamraiser']
+              apiServlet = 'CR' + apiServlet.toLowerCase().charAt(0).toUpperCase() + apiServlet.toLowerCase().slice(1).toLowerCase() + 'API'
+              apiServlet = apiServlet.replace('Addressbook', 'AddressBook').replace('Datasync', 'DataSync').replace 'Orgevent', 'OrgEvent'
+            if apiServlet not in ['CRAddressBookAPI', 'CRAdvocacyAPI', 'CRConsAPI', 'CRContentAPI', 'CRDataSyncAPI', 'CRDonationAPI', 'CRGroupAPI', 'CROrgEventAPI', 'CRRecurringAPI', 'CRSurveyAPI', 'CRTeamraiserAPI']
+              $luminateRequestHandler.rejectInvalidRequest 'Invalid API servlet ' + apiServlet
+            else if not angular.isString requestData
+              $luminateRequestHandler.rejectInvalidRequest 'Request data must be a string but was ' + typeof requestData
             else
-              if apiServlet in ['CRDonation', 'CRTeamraiserAPI']
-                useHTTP = false
-              if not useHTTP
-                requestUrl = $luminateUtilsConfig.path.secure
-              else
-                requestUrl = $luminateUtilsConfig.path.nonsecure
-              requestUrl += apiServlet
-              if _this.routingId
-                requestUrl += ';jsessionid=' + _this.routingId
-              if requiresAuth
-                requestData += '&auth=' + _this.authToken
-              if _this.jsessionId
-                requestData += '&JSESSIONID=' + _this.jsessionId
-              if $luminateUtilsConfig.defaultRequestData
-                requestData += '&' + $luminateUtilsConfig.defaultRequestData
-              if APP_INFO?.version
-                requestData += '&ng_luminate_utils=' + APP_INFO.version
-              requestData += '&ts=' + new Date().getTime()
-              $http
-                method: 'POST'
-                url: requestUrl
-                data: requestData
-                headers:
-                  'Content-Type': contentType
-                withCredentials: true
-              .then (response) ->
-                _response = response
-                if not isLoginRequest and not isLogoutRequest
-                  _response
-                else
-                  _this.getAuthToken true, useHTTP
+              requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey
+              isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') isnt -1
+              isLoginRequest = requestData.indexOf('&method=login&') isnt -1
+              isLogoutRequest = requestData.indexOf('&method=logout&') isnt -1  
+              if not isAuthTokenRequest and not _this.authToken
+                if not _this.authTokenPending
+                  _this.getAuthToken false, useHTTP
                     .then ->
-                      _response
+                      _this.request options
+                else
+                  $timeout ->
+                    _this.request options
+                  , 500
+              else
+                if apiServlet in ['CRDonation', 'CRTeamraiserAPI']
+                  useHTTP = false
+                if not useHTTP
+                  requestUrl = $luminateUtilsConfig.path.secure
+                else
+                  requestUrl = $luminateUtilsConfig.path.nonsecure
+                requestUrl += apiServlet
+                if _this.routingId
+                  requestUrl += ';jsessionid=' + _this.routingId
+                if requiresAuth
+                  requestData += '&auth=' + _this.authToken
+                if _this.jsessionId
+                  requestData += '&JSESSIONID=' + _this.jsessionId
+                if $luminateUtilsConfig.defaultRequestData
+                  requestData += '&' + $luminateUtilsConfig.defaultRequestData
+                if APP_INFO?.version
+                  requestData += '&ng_luminate_utils=' + APP_INFO.version
+                requestData += '&ts=' + new Date().getTime()
+                $http
+                  method: 'POST'
+                  url: requestUrl
+                  data: requestData
+                  headers:
+                    'Content-Type': contentType
+                  withCredentials: true
+                .then (response) ->
+                  _response = response
+                  if not isLoginRequest and not isLogoutRequest
+                    _response
+                  else
+                    _this.getAuthToken true, useHTTP
+                      .then ->
+                        _response
   ]
