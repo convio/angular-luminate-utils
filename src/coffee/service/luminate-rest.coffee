@@ -75,12 +75,14 @@ angular.module 'ngLuminateUtils'
                 requestUrl += apiServlet
                 if _this.routingId
                   requestUrl += ';jsessionid=' + _this.routingId
-                if requiresAuth
-                  requestData += '&auth=' + _this.authToken
-                if _this.jsessionId
-                  requestData += '&JSESSIONID=' + _this.jsessionId
+                if $luminateUtilsConfig.locale
+                  requestData += '&s_locale=' + $luminateUtilsConfig.locale
                 if $luminateUtilsConfig.defaultRequestData
                   requestData += '&' + $luminateUtilsConfig.defaultRequestData
+                if _this.jsessionId
+                  requestData += '&JSESSIONID=' + _this.jsessionId
+                if requiresAuth
+                  requestData += '&auth=' + _this.authToken
                 if APP_INFO?.version
                   requestData += '&ng_luminate_utils=' + APP_INFO.version
                 requestData += '&ts=' + new Date().getTime()

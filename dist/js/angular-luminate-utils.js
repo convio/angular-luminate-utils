@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.3.0'
+    version: '0.4.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -28,6 +28,16 @@
         return _this;
       }
     };
+    _this.setLocale = function(locale) {
+      if (!angular.isString(locale)) {
+        return new Error('Locale must be a string but was ' + typeof locale);
+      } else {
+        if (locale === 'en_US' || locale === 'es_US' || locale === 'en_CA' || locale === 'fr_CA' || locale === 'en_GB' || locale === 'en_AU') {
+          _this.locale = locale;
+        }
+        return _this;
+      }
+    };
     _this.setDefaultRequestData = function(defaultRequestData) {
       if (!angular.isString(defaultRequestData)) {
         new Error('Request data must be a string but was ' + typeof defaultRequestData);
@@ -40,6 +50,120 @@
       return _this;
     };
   });
+
+  angular.module('ngLuminateUtils').factory('$luminateMessageCatalog', [
+    '$q', '$luminateUtilsConfig', '$luminateRequestHandler', '$luminateRest', function($q, $luminateUtilsConfig, $luminateRequestHandler, $luminateRest) {
+      return {
+        get: function(messageCatalogEntries) {
+          var _this, bundles, currentLocale, deferred, numBundlesComplete, numValidBundles, requestedKeyMap;
+          _this = this;
+          currentLocale = $luminateUtilsConfig.locale || 'default';
+          if (!angular.isString(messageCatalogEntries) && !angular.isArray(messageCatalogEntries)) {
+            return $luminateRequestHandler.rejectInvalidRequest('Message Catalog entries must be a string or array but was ' + typeof messageCatalogEntries);
+          } else {
+            if (!angular.isArray(messageCatalogEntries)) {
+              messageCatalogEntries = [messageCatalogEntries];
+            }
+            bundles = {};
+            numValidBundles = 0;
+            angular.forEach(messageCatalogEntries, function(messageCatalogEntry) {
+              var entryBundle, entryKey, messageCatalogEntryParts;
+              messageCatalogEntryParts = messageCatalogEntry.split(':');
+              if (messageCatalogEntryParts.length !== 2) {
+                return new Error('Invalid Message Catalog bundle/key pair ' + messageCatalogEntry);
+              } else {
+                entryBundle = $luminateRequestHandler.sanitizeString(messageCatalogEntryParts[0], true, true);
+                entryKey = $luminateRequestHandler.sanitizeString(messageCatalogEntryParts[1], true, true);
+                if (!bundles[entryBundle]) {
+                  bundles[entryBundle] = {};
+                  numValidBundles++;
+                }
+                if (!bundles[entryBundle].requestedKeys) {
+                  bundles[entryBundle].requestedKeys = [];
+                }
+                bundles[entryBundle].requestedKeys.push(entryKey);
+                if (!bundles[entryBundle].newKeys) {
+                  bundles[entryBundle].newKeys = [];
+                }
+                if (!_this.messageCatalogCache) {
+                  _this.messageCatalogCache = {};
+                }
+                if (!_this.messageCatalogCache[currentLocale]) {
+                  _this.messageCatalogCache[currentLocale] = {};
+                }
+                if (!_this.messageCatalogCache[currentLocale][entryBundle]) {
+                  _this.messageCatalogCache[currentLocale][entryBundle] = {};
+                }
+                if (!angular.isString(_this.messageCatalogCache[currentLocale][entryBundle][entryKey])) {
+                  return bundles[entryBundle].newKeys.push(entryKey);
+                }
+              }
+            });
+            if (bundles.length === 0) {
+              return $luminateRequestHandler.rejectInvalidRequest('No Message Catalog bundles defined.');
+            } else {
+              deferred = $q.defer();
+              numBundlesComplete = 0;
+              requestedKeyMap = {};
+              angular.forEach(bundles, function(keys, bundle) {
+                var numNewKeys;
+                requestedKeyMap[bundle] = {};
+                angular.forEach(keys.requestedKeys, function(requestedKey) {
+                  if (_this.messageCatalogCache[currentLocale][bundle][requestedKey]) {
+                    return requestedKeyMap[bundle][requestedKey] = _this.messageCatalogCache[currentLocale][bundle][requestedKey];
+                  }
+                });
+                numNewKeys = keys.newKeys.length;
+                if (numNewKeys === 0) {
+                  numBundlesComplete++;
+                  if (numBundlesComplete === numValidBundles) {
+                    return deferred.resolve(requestedKeyMap);
+                  }
+                } else {
+                  return $luminateRest.request({
+                    api: 'content',
+                    data: 'method=getMessageBundle&bundle=' + bundle + '&keys=' + keys.newKeys.join(','),
+                    requiresAuth: true
+                  }).then(function(response) {
+                    var keyValues, ref;
+                    keyValues = (ref = response.data.getMessageBundleResponse) != null ? ref.values : void 0;
+                    if (!keyValues) {
+                      angular.forEach(keys.newKeys, function(newKey) {
+                        _this.messageCatalogCache[currentLocale][bundle][newKey] = '';
+                        return requestedKeyMap[bundle][newKey] = '';
+                      });
+                    } else {
+                      if (!angular.isArray(keyValues)) {
+                        keyValues = [keyValues];
+                      }
+                      angular.forEach(keyValues, function(keyValue) {
+                        var value;
+                        value = keyValue.value;
+                        if (value.indexOf('Message not found for key: ') === 0) {
+                          value = '';
+                        }
+                        _this.messageCatalogCache[currentLocale][bundle][keyValue.key] = value;
+                        return requestedKeyMap[bundle][keyValue.key] = value;
+                      });
+                    }
+                    numBundlesComplete++;
+                    if (numBundlesComplete === numValidBundles) {
+                      return deferred.resolve(requestedKeyMap);
+                    }
+                  });
+                }
+              });
+              return deferred.promise;
+            }
+          }
+        },
+        flushCache: function() {
+          _this.messageCatalogCache = {};
+          return _this;
+        }
+      };
+    }
+  ]);
 
   angular.module('ngLuminateUtils').factory('$luminateRequestHandler', [
     '$q', function($q) {
@@ -153,14 +277,17 @@
                   if (_this.routingId) {
                     requestUrl += ';jsessionid=' + _this.routingId;
                   }
-                  if (requiresAuth) {
-                    requestData += '&auth=' + _this.authToken;
+                  if ($luminateUtilsConfig.locale) {
+                    requestData += '&s_locale=' + $luminateUtilsConfig.locale;
+                  }
+                  if ($luminateUtilsConfig.defaultRequestData) {
+                    requestData += '&' + $luminateUtilsConfig.defaultRequestData;
                   }
                   if (_this.jsessionId) {
                     requestData += '&JSESSIONID=' + _this.jsessionId;
                   }
-                  if ($luminateUtilsConfig.defaultRequestData) {
-                    requestData += '&' + $luminateUtilsConfig.defaultRequestData;
+                  if (requiresAuth) {
+                    requestData += '&auth=' + _this.authToken;
                   }
                   if (APP_INFO != null ? APP_INFO.version : void 0) {
                     requestData += '&ng_luminate_utils=' + APP_INFO.version;
@@ -198,11 +325,18 @@
     '$q', '$luminateRequestHandler', '$luminateTemplateTag', function($q, $luminateRequestHandler, $luminateTemplateTag) {
       return {
         get: function(sessionVar) {
+          var templateTag;
           if (!angular.isString(sessionVar)) {
             return $luminateRequestHandler.rejectInvalidRequest('Session variable name must be a string but was ' + typeof sessionVar);
           } else {
-            sessionVar = $luminateRequestHandler.sanitizeString(sessionVar, true, true);
-            return $luminateTemplateTag.parse('[[S80:' + sessionVar + ']]').then(function(response) {
+            sessionVar = $luminateRequestHandler.sanitizeString(sessionVar, true);
+            templateTag = '';
+            if (sessionVar.indexOf('[[') === 0 && sessionVar.lastIndexOf(']]') === sessionVar.length - 2) {
+              templateTag = '[[E80:' + sessionVar + ']]';
+            } else {
+              templateTag = '[[S80:' + sessionVar + ']]';
+            }
+            return $luminateTemplateTag.parse(templateTag).then(function(response) {
               return $luminateRequestHandler.sanitizeString(response, true);
             });
           }
@@ -269,13 +403,19 @@
         '$scope', '$sce', '$luminateRequestHandler', '$luminateTemplateTag', function($scope, $sce, $luminateRequestHandler, $luminateTemplateTag) {
           var getReusableContent;
           getReusableContent = function() {
-            var pagename;
+            var pagename, templateTag;
             pagename = $scope.pagename;
             if (!angular.isString(pagename)) {
               return $luminateRequestHandler.rejectInvalidRequest('Pagename must be a string but was ' + typeof pagename);
             } else {
-              pagename = angular.element('<div>' + pagename + '</div>').text().replace(/\[\[/g, '').replace(/\]\]/g, '').replace(/::/g, '');
-              return $luminateTemplateTag.parse('[[S51:' + pagename + ']]').then(function(response) {
+              pagename = $luminateRequestHandler.sanitizeString(pagename, true);
+              templateTag = '';
+              if (pagename.indexOf('[[') === 0 && pagename.lastIndexOf(']]') === pagename.length - 2) {
+                templateTag = '[[E51:' + pagename + ']]';
+              } else {
+                templateTag = '[[S51:' + pagename + ']]';
+              }
+              return $luminateTemplateTag.parse(templateTag).then(function(response) {
                 return $scope.reusableContent = $sce.trustAsHtml(response);
               });
             }

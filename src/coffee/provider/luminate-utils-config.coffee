@@ -18,6 +18,14 @@ angular.module 'ngLuminateUtils'
         _this.apiKey = apiKey
         _this
     
+    _this.setLocale = (locale) ->
+      if not angular.isString locale
+        new Error 'Locale must be a string but was ' + typeof locale
+      else
+        if locale in ['en_US', 'es_US', 'en_CA', 'fr_CA', 'en_GB', 'en_AU']
+          _this.locale = locale
+        _this
+    
     _this.setDefaultRequestData = (defaultRequestData) ->
       if not angular.isString defaultRequestData
         new Error 'Request data must be a string but was ' + typeof defaultRequestData

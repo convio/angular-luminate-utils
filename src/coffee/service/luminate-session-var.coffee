@@ -8,8 +8,13 @@ angular.module 'ngLuminateUtils'
         if not angular.isString sessionVar
           $luminateRequestHandler.rejectInvalidRequest 'Session variable name must be a string but was ' + typeof sessionVar
         else
-          sessionVar = $luminateRequestHandler.sanitizeString sessionVar, true, true
-          $luminateTemplateTag.parse '[[S80:' + sessionVar + ']]'
+          sessionVar = $luminateRequestHandler.sanitizeString sessionVar, true
+          templateTag = ''
+          if sessionVar.indexOf('[[') is 0 and sessionVar.lastIndexOf(']]') is sessionVar.length - 2
+            templateTag = '[[E80:' + sessionVar + ']]'
+          else
+            templateTag = '[[S80:' + sessionVar + ']]'
+          $luminateTemplateTag.parse templateTag
             .then (response) ->
               $luminateRequestHandler.sanitizeString response, true
       

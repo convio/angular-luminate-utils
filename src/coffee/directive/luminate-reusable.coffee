@@ -15,8 +15,13 @@ angular.module 'ngLuminateUtils'
           if not angular.isString pagename
             $luminateRequestHandler.rejectInvalidRequest 'Pagename must be a string but was ' + typeof pagename
           else
-            pagename = angular.element('<div>' + pagename + '</div>').text().replace(/\[\[/g, '').replace(/\]\]/g, '').replace /::/g, ''
-            $luminateTemplateTag.parse '[[S51:' + pagename + ']]'
+            pagename = $luminateRequestHandler.sanitizeString pagename, true
+            templateTag = ''
+            if pagename.indexOf('[[') is 0 and pagename.lastIndexOf(']]') is pagename.length - 2
+              templateTag = '[[E51:' + pagename + ']]'
+            else
+              templateTag = '[[S51:' + pagename + ']]'
+            $luminateTemplateTag.parse templateTag
               .then (response) ->
                 $scope.reusableContent =  $sce.trustAsHtml response
         getReusableContent()
