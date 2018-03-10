@@ -8,7 +8,7 @@ module.exports = {
   "grunt-config": {
     files: [
       {
-        src: [ 
+        src: [
           'grunt/task/*.js', 
           'grunt/.jshintrc'
         ]

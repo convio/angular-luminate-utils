@@ -17,9 +17,10 @@ angular.module 'ngLuminateUtils'
           else
             pagename = $luminateRequestHandler.sanitizeString pagename, true
             templateTag = ''
-            if pagename.indexOf('[[') is 0 and pagename.lastIndexOf(']]') is pagename.length - 2
+            if pagename.indexOf('[[') > -1 and pagename.indexOf(']]') > pagename.indexOf('[[')
               templateTag = '[[E51:' + pagename + ']]'
             else
+              pagename = $luminateRequestHandler.sanitizeString pagename
               templateTag = '[[S51:' + pagename + ']]'
             $luminateTemplateTag.parse templateTag
               .then (response) ->

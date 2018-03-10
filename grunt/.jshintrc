@@ -1,12 +1,13 @@
 {
   "asi": true, 
-  "browser": true, 
+  "browser": false, 
   "eqeqeq": false, 
   "eqnull": true, 
-  "es3": true, 
+  "esversion": 3, 
   "expr": true, 
-  "jquery": true, 
+  "jquery": false, 
   "latedef": true, 
+  "node": true, 
   "strict": true, 
   "unused": true
 }

@@ -1,7 +1,7 @@
 {
   "name": "angular-luminate-utils",
   "description": "Luminate Online utilities for AngularJS 1.x apps.",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "repository": [
     {
       "type": "git",
@@ -9,19 +9,19 @@
     }
   ],
   "engines": {
-    "node": "^6.11.4"
+    "node": "^6.13.1"
   },
   "dependencies": {
     "load-grunt-tasks": "^3.5.2"
   },
   "devDependencies": {
     "glob": "^7.1.2",
-    "grunt": "^1.0.1",
+    "grunt": "^1.0.2",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-clean": "^1.1.0",
     "grunt-contrib-coffee": "^1.0.0",
     "grunt-contrib-jshint": "^1.1.0",
-    "grunt-contrib-uglify": "^3.1.0",
+    "grunt-contrib-uglify": "^3.3.0",
     "grunt-contrib-watch": "^1.0.0",
     "grunt-notify": "^0.4.5",
     "time-grunt": "^1.4.0"

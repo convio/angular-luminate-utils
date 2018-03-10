@@ -3,8 +3,7 @@ module.exports = (grunt) ->
   
   require('time-grunt') grunt
   
-  config =
-    timestamp: new Date().getTime()
+  config = {}
   loadConfig = (path) ->
     glob = require 'glob'
     object = {}

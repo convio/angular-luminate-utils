@@ -1,42 +1,56 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.4.0'
+    version: '0.5.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
     var _this;
     _this = this;
     _this.setPath = function(path) {
+      var nonsecurePathIsValid, securePathIsValid;
       if (path == null) {
         path = {};
       }
       if (!angular.isString(path.nonsecure || !angular.isString(path.secure))) {
-        return new Error('You must specify both a nonsecure and secure path.');
+        new Error('You must specify both a nonsecure and secure path.');
       } else {
-        _this.path = {
-          nonsecure: path.nonsecure,
-          secure: path.secure
-        };
-        return _this;
+        path.nonsecure = path.nonsecure.toLowerCase();
+        path.secure = path.secure.toLowerCase();
+        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') === path.nonsecure.length - 6 || path.nonsecure.indexOf('/admin/') !== path.nonsecure.length - 6;
+        securePathIsValid = path.secure.indexOf('/site/') === path.secure.length - 7 || path.secure.indexOf('/admin/') !== path.secure.length - 7;
+        if (!nonsecurePathIsValid || !securePathIsValid) {
+          if (!nonsecurePathIsValid) {
+            new Error('Invalid nonsecure path.');
+          }
+          if (!securePathIsValid) {
+            new Error('Invalid secure path.');
+          }
+        } else {
+          _this.path = {
+            nonsecure: path.nonsecure,
+            secure: path.secure
+          };
+        }
       }
+      return _this;
     };
     _this.setKey = function(apiKey) {
       if (!angular.isString(apiKey)) {
-        return new Error('API Key must be a string but was ' + typeof apiKey);
+        new Error('API Key must be a string but was ' + typeof apiKey);
       } else {
         _this.apiKey = apiKey;
-        return _this;
       }
+      return _this;
     };
     _this.setLocale = function(locale) {
       if (!angular.isString(locale)) {
-        return new Error('Locale must be a string but was ' + typeof locale);
+        new Error('Locale must be a string but was ' + typeof locale);
       } else {
         if (locale === 'en_US' || locale === 'es_US' || locale === 'en_CA' || locale === 'fr_CA' || locale === 'en_GB' || locale === 'en_AU') {
           _this.locale = locale;
         }
-        return _this;
       }
+      return _this;
     };
     _this.setDefaultRequestData = function(defaultRequestData) {
       if (!angular.isString(defaultRequestData)) {
@@ -410,9 +424,10 @@
             } else {
               pagename = $luminateRequestHandler.sanitizeString(pagename, true);
               templateTag = '';
-              if (pagename.indexOf('[[') === 0 && pagename.lastIndexOf(']]') === pagename.length - 2) {
+              if (pagename.indexOf('[[') > -1 && pagename.indexOf(']]') > pagename.indexOf('[[')) {
                 templateTag = '[[E51:' + pagename + ']]';
               } else {
+                pagename = $luminateRequestHandler.sanitizeString(pagename);
                 templateTag = '[[S51:' + pagename + ']]';
               }
               return $luminateTemplateTag.parse(templateTag).then(function(response) {

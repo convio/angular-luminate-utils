@@ -294,6 +294,12 @@ The directive can be referenced as an element, or as an attribute.
 <div luminate-reusable pagename="'reus_badges'"></div>
 ```
 
+Template tags can be used for dynamic pagenames.
+
+``` html
+<div luminate-reusable pagename="'reus_[[S1:home_stateprov]]_message'"></div>
+```
+
 ## Browser Support
 
 Browser support is largely dependent upon the version of AngularJS being used in your app, but for the most part, 
