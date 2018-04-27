@@ -30,12 +30,14 @@ angular.module 'ngLuminateUtils'
         settings = options
         apiServlet = settings.api
         requestData = settings.data
+        requestFormData = settings.formData
         requiresAuth = settings.requiresAuth
         useHTTP = settings.useHTTP
         contentType = settings.contentType
-        if contentType?.split(';')[0] isnt 'multipart/form-data'
-          contentType = 'application/x-www-form-urlencoded'
-        contentType += '; charset=UTF-8'
+        if (requestFormData and not contentType) or contentType?.split(';')[0] is 'multipart/form-data'
+          contentType = 'multipart/form-data'
+        else
+          contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
         if not $luminateUtilsConfig.path.nonsecure or not $luminateUtilsConfig.path.secure
           $luminateRequestHandler.rejectInvalidRequest 'You must specify both a nonsecure and secure path.'
         else if not $luminateUtilsConfig.apiKey
@@ -49,13 +51,19 @@ angular.module 'ngLuminateUtils'
               apiServlet = apiServlet.replace('Addressbook', 'AddressBook').replace('Datasync', 'DataSync').replace 'Orgevent', 'OrgEvent'
             if apiServlet not in ['CRAddressBookAPI', 'CRAdvocacyAPI', 'CRConsAPI', 'CRContentAPI', 'CRDataSyncAPI', 'CRDonationAPI', 'CRGroupAPI', 'CROrgEventAPI', 'CRRecurringAPI', 'CRSurveyAPI', 'CRTeamraiserAPI']
               $luminateRequestHandler.rejectInvalidRequest 'Invalid API servlet ' + apiServlet
-            else if not angular.isString requestData
+            else if requestFormData and not angular.isObject requestFormData
+              $luminateRequestHandler.rejectInvalidRequest 'Request formData must be an object but was ' + typeof requestFormData
+            else if not requestFormData and not angular.isString requestData
               $luminateRequestHandler.rejectInvalidRequest 'Request data must be a string but was ' + typeof requestData
             else
-              requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey
-              isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') isnt -1
-              isLoginRequest = requestData.indexOf('&method=login&') isnt -1
-              isLogoutRequest = requestData.indexOf('&method=logout&') isnt -1  
+              if requestFormData and not requestData
+                requestData = ''
+              if requestData isnt ''
+                requestData += '&'
+              requestData += 'v=1.0&response_format=json&suppress_response_codes=true&api_key=' + $luminateUtilsConfig.apiKey
+              isAuthTokenRequest = ('&' + requestData).indexOf('method=getLoginUrl&') isnt -1
+              isLoginRequest = ('&' + requestData).indexOf('&method=login&') isnt -1
+              isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') isnt -1  
               if not isAuthTokenRequest and not _this.authToken
                 if not _this.authTokenPending
                   _this.getAuthToken false, useHTTP
@@ -86,19 +94,28 @@ angular.module 'ngLuminateUtils'
                 if APP_INFO?.version
                   requestData += '&ng_luminate_utils=' + APP_INFO.version
                 requestData += '&ts=' + new Date().getTime()
-                $http
+                if requestFormData
+                  angular.forEach requestData.split('&'), (requestDataKeyVal) ->
+                    requestDataKeyValParts = requestDataKeyVal.split('=')
+                    requestDataKey = requestDataKeyValParts[0]
+                    requestDataVal = requestDataKeyValParts[1] or ''
+                    requestFormData.append requestDataKey, requestDataVal
+                requestProperties = 
                   method: 'POST'
                   url: requestUrl
-                  data: requestData
+                  data: if requestFormData then requestFormData else requestData
                   headers:
-                    'Content-Type': contentType
+                    'Content-Type': if contentType is 'multipart/form-data' then undefined else contentType
                   withCredentials: true
-                .then (response) ->
-                  _response = response
-                  if not isLoginRequest and not isLogoutRequest
-                    _response
-                  else
-                    _this.getAuthToken true, useHTTP
-                      .then ->
-                        _response
+                if contentType is 'multipart/form-data'
+                  requestProperties.transformRequest = angular.identity
+                $http requestProperties
+                  .then (response) ->
+                    _response = response
+                    if not isLoginRequest and not isLogoutRequest
+                      _response
+                    else
+                      _this.getAuthToken true, useHTTP
+                        .then ->
+                          _response
   ]

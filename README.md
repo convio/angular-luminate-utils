@@ -18,6 +18,7 @@ outside of Luminate Online.
 - [Managing Session Variables With $luminateSessionVar](#managing-session-variables-with-luminatesessionvar)
 - [Getting Message Catalog Entries With the $luminateMessageCatalog Service](#getting-message-catalog-entries-with-the-luminatemessagecatalog-service)
 - [Including Reusable Content With the luminate-reusable Directive](#including-reusable-content-with-the-luminate-reusable-directive)
+- [Including File With the luminate-include Directive](#including-file-with-the-luminate-include-directive)
 - [Browser Support](#browser-support)
 - [Reporting Issues](#reporting-issues)
 
@@ -104,7 +105,7 @@ angular.module('myApp').controller('myCtrl', ['$scope', '$luminateUtilsConfig', 
 
 ## API Requests With $luminateRest
 
-The `$luminateRest` service is the heart of the library. It provides methods for making AJAX requests to the 
+The `$luminateRest` service is the heart of the library. It provides methods for making requests to the 
 Luminate Online REST API, with automatic handling of authentication tokens for methods that require it.
 
 The `request` method accepts one argument, an options object. It returns a Promise, resolved with the full 
@@ -114,8 +115,9 @@ The `request` method accepts one argument, an options object. It returns a Promi
 | ------------ | ----------- |
 | api          | Either a full, case-sensitive API servlet name, e.g. "CRConsAPI", or a case-insensitive shorthand with "CR" and "API" removed, e.g. "cons". |
 | data         | The data string to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
+| formData     | The FormData object to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
 | requiresAuth | A Boolean indicating whether or not the API method being called requires authentication. If true, an auth token is automatically appended to the request data. |
-| contentType  | The Content-Type for the request, either "application/x-www-form-urlencoded", the default, or "multipart/form-data". |
+| contentType  | The Content-Type for the request, either "application/x-www-form-urlencoded" or "multipart/form-data". If formData is provided, this will default to "multipart/form-data", otherwise "application/x-www-form-urlencoded" is the default. |
 | useHTTP      | By default, all API requests are made over HTTPS. Setting this Boolean to true will cause the request to use HTTP. Some API servlets (namely CRDonationAPI and CRTeamraiserAPI) must always be called over a secure channel, in which case this option is ignored. **Note that this will be deprecated in a future version of this library.** |
 
 ### Examples
@@ -166,6 +168,30 @@ $scope.submitDonation = function() {
     }
   });
 };
+```
+
+Upload a TeamRaiser participant's personal page photo using `formData`:
+
+``` js
+$scope.submitUpload = function() {
+  $scope.showUploadError = false;
+  $scope.showUploadSuccess = false;
+  var uploadFormData = new FormData();
+  angular.forEach($scope.photoInfo, function(val, key) {
+    uploadFormData.append(key, val);
+  });
+  $luminateRest.request({
+    api: 'teamraiser', 
+    formData: uploadFormData, 
+    requiresAuth: true
+  }).then(function(response) {
+    if(!response.data.uploadPersonalPhotoResponse || !response.data.uploadPersonalPhotoResponse.photoItem) {
+      $scope.showUploadError = true
+    } else {
+      $scope.showUploadSuccess = true;
+    }
+  });
+});
 ```
 
 ## A Note on Third-Party Cookies
@@ -298,6 +324,27 @@ Template tags can be used for dynamic pagenames.
 
 ``` html
 <div luminate-reusable pagename="'reus_[[S1:home_stateprov]]_message'"></div>
+```
+
+## Including File With the luminate-include Directive
+
+The `luminate-include` directive can be used to render the content of a file from the Luminate Online filesystem. 
+The `filename` attribute identifies the file to be rendered.
+
+``` html
+<luminate-include filename="'foo/bar/badges.html'"></luminate-include>
+```
+
+The directive can be referenced as an element, or as an attribute.
+
+``` html
+<div luminate-include pagename="'foo/bar/badges.html'"></div>
+```
+
+Template tags can be used for dynamic filenames.
+
+``` html
+<div luminate-include filename="'foo/bar/[[S1:home_stateprov]]-message.html'"></div>
 ```
 
 ## Browser Support

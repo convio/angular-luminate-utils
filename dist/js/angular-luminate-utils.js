@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.5.0'
+    version: '0.6.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -232,7 +232,7 @@
           }
         },
         request: function(options) {
-          var _this, apiServlet, contentType, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestData, requestUrl, requiresAuth, settings, useHTTP;
+          var _this, apiServlet, contentType, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestData, requestFormData, requestProperties, requestUrl, requiresAuth, settings, useHTTP;
           if (options == null) {
             options = {};
           }
@@ -240,13 +240,15 @@
           settings = options;
           apiServlet = settings.api;
           requestData = settings.data;
+          requestFormData = settings.formData;
           requiresAuth = settings.requiresAuth;
           useHTTP = settings.useHTTP;
           contentType = settings.contentType;
-          if ((contentType != null ? contentType.split(';')[0] : void 0) !== 'multipart/form-data') {
-            contentType = 'application/x-www-form-urlencoded';
+          if ((requestFormData && !contentType) || (contentType != null ? contentType.split(';')[0] : void 0) === 'multipart/form-data') {
+            contentType = 'multipart/form-data';
+          } else {
+            contentType = 'application/x-www-form-urlencoded; charset=UTF-8';
           }
-          contentType += '; charset=UTF-8';
           if (!$luminateUtilsConfig.path.nonsecure || !$luminateUtilsConfig.path.secure) {
             return $luminateRequestHandler.rejectInvalidRequest('You must specify both a nonsecure and secure path.');
           } else if (!$luminateUtilsConfig.apiKey) {
@@ -261,13 +263,21 @@
               }
               if (apiServlet !== 'CRAddressBookAPI' && apiServlet !== 'CRAdvocacyAPI' && apiServlet !== 'CRConsAPI' && apiServlet !== 'CRContentAPI' && apiServlet !== 'CRDataSyncAPI' && apiServlet !== 'CRDonationAPI' && apiServlet !== 'CRGroupAPI' && apiServlet !== 'CROrgEventAPI' && apiServlet !== 'CRRecurringAPI' && apiServlet !== 'CRSurveyAPI' && apiServlet !== 'CRTeamraiserAPI') {
                 return $luminateRequestHandler.rejectInvalidRequest('Invalid API servlet ' + apiServlet);
-              } else if (!angular.isString(requestData)) {
+              } else if (requestFormData && !angular.isObject(requestFormData)) {
+                return $luminateRequestHandler.rejectInvalidRequest('Request formData must be an object but was ' + typeof requestFormData);
+              } else if (!requestFormData && !angular.isString(requestData)) {
                 return $luminateRequestHandler.rejectInvalidRequest('Request data must be a string but was ' + typeof requestData);
               } else {
-                requestData = 'v=1.0&response_format=json&suppress_response_codes=true&' + requestData + '&api_key=' + $luminateUtilsConfig.apiKey;
-                isAuthTokenRequest = requestData.indexOf('&method=getLoginUrl&') !== -1;
-                isLoginRequest = requestData.indexOf('&method=login&') !== -1;
-                isLogoutRequest = requestData.indexOf('&method=logout&') !== -1;
+                if (requestFormData && !requestData) {
+                  requestData = '';
+                }
+                if (requestData !== '') {
+                  requestData += '&';
+                }
+                requestData += 'v=1.0&response_format=json&suppress_response_codes=true&api_key=' + $luminateUtilsConfig.apiKey;
+                isAuthTokenRequest = ('&' + requestData).indexOf('method=getLoginUrl&') !== -1;
+                isLoginRequest = ('&' + requestData).indexOf('&method=login&') !== -1;
+                isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') !== -1;
                 if (!isAuthTokenRequest && !_this.authToken) {
                   if (!_this.authTokenPending) {
                     return _this.getAuthToken(false, useHTTP).then(function() {
@@ -307,15 +317,28 @@
                     requestData += '&ng_luminate_utils=' + APP_INFO.version;
                   }
                   requestData += '&ts=' + new Date().getTime();
-                  return $http({
+                  if (requestFormData) {
+                    angular.forEach(requestData.split('&'), function(requestDataKeyVal) {
+                      var requestDataKey, requestDataKeyValParts, requestDataVal;
+                      requestDataKeyValParts = requestDataKeyVal.split('=');
+                      requestDataKey = requestDataKeyValParts[0];
+                      requestDataVal = requestDataKeyValParts[1] || '';
+                      return requestFormData.append(requestDataKey, requestDataVal);
+                    });
+                  }
+                  requestProperties = {
                     method: 'POST',
                     url: requestUrl,
-                    data: requestData,
+                    data: requestFormData ? requestFormData : requestData,
                     headers: {
-                      'Content-Type': contentType
+                      'Content-Type': contentType === 'multipart/form-data' ? void 0 : contentType
                     },
                     withCredentials: true
-                  }).then(function(response) {
+                  };
+                  if (contentType === 'multipart/form-data') {
+                    requestProperties.transformRequest = angular.identity;
+                  }
+                  return $http(requestProperties).then(function(response) {
                     var _response;
                     _response = response;
                     if (!isLoginRequest && !isLogoutRequest) {
@@ -405,6 +428,46 @@
       };
     }
   ]);
+
+  angular.module('ngLuminateUtils').directive('luminateInclude', function() {
+    return {
+      scope: {
+        filename: '='
+      },
+      template: '<div ng-bind-html="includeContent"></div>',
+      replace: true,
+      controller: [
+        '$scope', '$sce', '$luminateRequestHandler', '$luminateTemplateTag', function($scope, $sce, $luminateRequestHandler, $luminateTemplateTag) {
+          var getIncludeContent;
+          getIncludeContent = function() {
+            var filename, templateTag;
+            filename = $scope.filename;
+            if (!angular.isString(filename)) {
+              return $luminateRequestHandler.rejectInvalidRequest('Filename must be a string but was ' + typeof filename);
+            } else {
+              filename = $luminateRequestHandler.sanitizeString(filename, true);
+              templateTag = '';
+              if (filename.indexOf('[[') > -1 && filename.indexOf(']]') > filename.indexOf('[[')) {
+                templateTag = '[[E84:' + filename + ']]';
+              } else {
+                filename = $luminateRequestHandler.sanitizeString(filename);
+                templateTag = '[[S84:' + filename + ']]';
+              }
+              return $luminateTemplateTag.parse(templateTag).then(function(response) {
+                return $scope.includeContent = $sce.trustAsHtml(response);
+              });
+            }
+          };
+          getIncludeContent();
+          return $scope.$watch('filename', function(newValue, oldValue) {
+            if (newValue !== oldValue) {
+              return getIncludeContent();
+            }
+          });
+        }
+      ]
+    };
+  });
 
   angular.module('ngLuminateUtils').directive('luminateReusable', function() {
     return {
