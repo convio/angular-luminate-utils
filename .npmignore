@@ -1,5 +1,6 @@
 .gitignore
 /grunt
 /src
-node_modules
+/node_modules
+bower.json
 Gruntfile.coffee

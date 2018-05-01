@@ -12,9 +12,10 @@
   "homepage": "https://github.com/noahcooper/angular-luminate-utils",
   "ignore": [
     ".gitignore",
+    ".npmignore",
     "/grunt",
     "/src",
-    "node_modules",
+    "/node_modules",
     "Gruntfile.coffee"
   ],
   "dependencies": {
