@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.6.0'
+    version: '0.6.1'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -434,7 +434,7 @@
       scope: {
         filename: '='
       },
-      template: '<div ng-bind-html="includeContent"></div>',
+      template: '<div ng-bind-html="includeContent" ng-cloak></div>',
       replace: true,
       controller: [
         '$scope', '$sce', '$luminateRequestHandler', '$luminateTemplateTag', function($scope, $sce, $luminateRequestHandler, $luminateTemplateTag) {
@@ -474,7 +474,7 @@
       scope: {
         pagename: '='
       },
-      template: '<div ng-bind-html="reusableContent"></div>',
+      template: '<div ng-bind-html="reusableContent" ng-cloak></div>',
       replace: true,
       controller: [
         '$scope', '$sce', '$luminateRequestHandler', '$luminateTemplateTag', function($scope, $sce, $luminateRequestHandler, $luminateTemplateTag) {

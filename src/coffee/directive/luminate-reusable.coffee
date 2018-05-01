@@ -2,7 +2,7 @@ angular.module 'ngLuminateUtils'
   .directive 'luminateReusable', ->
     scope:
       pagename: '='
-    template: '<div ng-bind-html="reusableContent"></div>'
+    template: '<div ng-bind-html="reusableContent" ng-cloak></div>'
     replace: true
     controller: [
       '$scope'

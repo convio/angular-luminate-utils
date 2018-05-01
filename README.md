@@ -10,6 +10,7 @@ outside of Luminate Online.
 ## Table of Contents
 
 - [Basic Setup](#basic-setup)
+- [Install](#install)
 - [Including ngLuminateUtils In Your App](#including-ngLuminateUtils-in-your-app)
 - [Configuration With $luminateUtilsConfig](#configuration-with-luminateutilsconfig)
 - [API Requests With $luminateRest](#api-requests-with-luminaterest)
@@ -41,11 +42,26 @@ Before getting started, there are a couple of basic steps you must follow:
    domains where you will use this library to these lists. As noted on the page, you can use an asterisk as a 
    wildcard if your website has multiple subdomains, e.g. "\*.myorganization.com".
 
+## Install
+
+npm
+
+```
+npm install angular-luminate-utils
+```
+
+bower
+
+```
+bower install angular-luminate-utils
+```
+
+Or if you're not into package management, just download the latest build under [dist](https://github.com/noahcooper/angular-luminate-utils/blob/master/dist/).
+
 ## Including ngLuminateUtils In Your App
 
 Once you've uploaded [angular-luminate-utils.min.js](https://github.com/noahcooper/angular-luminate-utils/blob/master/dist/js/angular-luminate-utils.min.js) 
-to your website, including the library is easy &mdash; just add it somewhere below Angular. (Change out the file 
-path as needed, depending on where you uploaded the file on your site.)
+to your website, including the library is easy &mdash; just add it somewhere below Angular.
 
 ```  html
 <script src="../js/angular-luminate-utils.min.js"></script>
@@ -173,6 +189,12 @@ $scope.submitDonation = function() {
 Upload a TeamRaiser participant's personal page photo using `formData`:
 
 ``` js
+$scope.photoInfo = {
+  method: 'uploadPersonalPhoto', 
+  fr_id: '1234', 
+  graphic_upload_upload: 'true'
+};
+// some code is needed here to set $scope.photoInfo.graphic_upload_file to a blob
 $scope.submitUpload = function() {
   $scope.showUploadError = false;
   $scope.showUploadSuccess = false;
@@ -338,7 +360,7 @@ The `filename` attribute identifies the file to be rendered.
 The directive can be referenced as an element, or as an attribute.
 
 ``` html
-<div luminate-include pagename="'foo/bar/badges.html'"></div>
+<div luminate-include filename="'foo/bar/badges.html'"></div>
 ```
 
 Template tags can be used for dynamic filenames.

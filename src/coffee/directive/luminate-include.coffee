@@ -2,7 +2,7 @@ angular.module 'ngLuminateUtils'
   .directive 'luminateInclude', ->
     scope:
       filename: '='
-    template: '<div ng-bind-html="includeContent"></div>'
+    template: '<div ng-bind-html="includeContent" ng-cloak></div>'
     replace: true
     controller: [
       '$scope'
