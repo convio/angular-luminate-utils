@@ -8,8 +8,8 @@ angular.module 'ngLuminateUtils'
       else
         path.nonsecure = path.nonsecure.toLowerCase()
         path.secure = path.secure.toLowerCase()
-        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') is path.nonsecure.length - 6 or path.nonsecure.indexOf('/admin/') isnt path.nonsecure.length - 6
-        securePathIsValid = path.secure.indexOf('/site/') is path.secure.length - 7 or path.secure.indexOf('/admin/') isnt path.secure.length - 7
+        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') is path.nonsecure.length - 6 or path.nonsecure.indexOf('/admin/') is path.nonsecure.length - 7
+        securePathIsValid = path.secure.indexOf('/site/') is path.secure.length - 6 or path.secure.indexOf('/admin/') is path.secure.length - 7
         if not nonsecurePathIsValid or not securePathIsValid
           if not nonsecurePathIsValid
             new Error 'Invalid nonsecure path.'

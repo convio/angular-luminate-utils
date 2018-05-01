@@ -1,7 +1,7 @@
 {
   "name": "angular-luminate-utils",
   "description": "Luminate Online utilities for AngularJS 1.x apps.",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "main": [
     "./dist/js/angular-luminate-utils.js"
   ],
@@ -19,6 +19,7 @@
     "Gruntfile.coffee"
   ],
   "dependencies": {
-    "angular": "^1.4.8"
+    "angular": "^1.4.8",
+    "angular-sanitize": "^1.4.8"
   }
 }

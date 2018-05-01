@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.6.1'
+    version: '0.7.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -16,8 +16,8 @@
       } else {
         path.nonsecure = path.nonsecure.toLowerCase();
         path.secure = path.secure.toLowerCase();
-        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') === path.nonsecure.length - 6 || path.nonsecure.indexOf('/admin/') !== path.nonsecure.length - 6;
-        securePathIsValid = path.secure.indexOf('/site/') === path.secure.length - 7 || path.secure.indexOf('/admin/') !== path.secure.length - 7;
+        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') === path.nonsecure.length - 6 || path.nonsecure.indexOf('/admin/') === path.nonsecure.length - 7;
+        securePathIsValid = path.secure.indexOf('/site/') === path.secure.length - 6 || path.secure.indexOf('/admin/') === path.secure.length - 7;
         if (!nonsecurePathIsValid || !securePathIsValid) {
           if (!nonsecurePathIsValid) {
             new Error('Invalid nonsecure path.');
@@ -275,7 +275,7 @@
                   requestData += '&';
                 }
                 requestData += 'v=1.0&response_format=json&suppress_response_codes=true&api_key=' + $luminateUtilsConfig.apiKey;
-                isAuthTokenRequest = ('&' + requestData).indexOf('method=getLoginUrl&') !== -1;
+                isAuthTokenRequest = ('&' + requestData).indexOf('&method=getLoginUrl&') !== -1;
                 isLoginRequest = ('&' + requestData).indexOf('&method=login&') !== -1;
                 isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') !== -1;
                 if (!isAuthTokenRequest && !_this.authToken) {
@@ -286,7 +286,7 @@
                   } else {
                     return $timeout(function() {
                       return _this.request(options);
-                    }, 500);
+                    }, 250);
                   }
                 } else {
                   if (apiServlet === 'CRDonation' || apiServlet === 'CRTeamraiserAPI') {

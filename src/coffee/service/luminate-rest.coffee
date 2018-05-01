@@ -61,7 +61,7 @@ angular.module 'ngLuminateUtils'
               if requestData isnt ''
                 requestData += '&'
               requestData += 'v=1.0&response_format=json&suppress_response_codes=true&api_key=' + $luminateUtilsConfig.apiKey
-              isAuthTokenRequest = ('&' + requestData).indexOf('method=getLoginUrl&') isnt -1
+              isAuthTokenRequest = ('&' + requestData).indexOf('&method=getLoginUrl&') isnt -1
               isLoginRequest = ('&' + requestData).indexOf('&method=login&') isnt -1
               isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') isnt -1  
               if not isAuthTokenRequest and not _this.authToken
@@ -72,7 +72,7 @@ angular.module 'ngLuminateUtils'
                 else
                   $timeout ->
                     _this.request options
-                  , 500
+                  , 250
               else
                 if apiServlet in ['CRDonation', 'CRTeamraiserAPI']
                   useHTTP = false
