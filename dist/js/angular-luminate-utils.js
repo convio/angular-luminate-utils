@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.7.0'
+    version: '0.7.1'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -11,7 +11,7 @@
       if (path == null) {
         path = {};
       }
-      if (!angular.isString(path.nonsecure || !angular.isString(path.secure))) {
+      if (!angular.isString(path.nonsecure) || !angular.isString(path.secure)) {
         new Error('You must specify both a nonsecure and secure path.');
       } else {
         path.nonsecure = path.nonsecure.toLowerCase();

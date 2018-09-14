@@ -3,7 +3,7 @@
 **This library is currently in beta, and significant changes are likely in future versions.**
 
 Luminate Online utilities for AngularJS 1.x apps. At its core, this library is a JavaScript wrapper around the 
-Luminate Online REST API](http://open.convio.com/api), with some helper functions and other magic sprinkled in. The 
+[Luminate Online REST API](http://open.convio.com/api), with some helper functions and other magic sprinkled in. The 
 library includes support for [all major modern browsers](#browser-support), and it can be used both within and 
 outside of Luminate Online.
 

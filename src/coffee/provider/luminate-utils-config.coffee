@@ -3,7 +3,7 @@ angular.module 'ngLuminateUtils'
     _this = this
     
     _this.setPath = (path = {}) ->
-      if not angular.isString path.nonsecure or not angular.isString path.secure
+      if not angular.isString(path.nonsecure) or not angular.isString(path.secure)
         new Error 'You must specify both a nonsecure and secure path.'
       else
         path.nonsecure = path.nonsecure.toLowerCase()
