@@ -3,21 +3,16 @@ angular.module 'ngLuminateUtils'
     _this = this
     
     _this.setPath = (path = {}) ->
-      if not angular.isString(path.nonsecure) or not angular.isString(path.secure)
-        new Error 'You must specify both a nonsecure and secure path.'
+      if not angular.isString(path.secure)
+        new Error 'You must specify a secure path.'
       else
-        path.nonsecure = path.nonsecure.toLowerCase()
         path.secure = path.secure.toLowerCase()
-        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') is path.nonsecure.length - 6 or path.nonsecure.indexOf('/admin/') is path.nonsecure.length - 7
         securePathIsValid = path.secure.indexOf('/site/') is path.secure.length - 6 or path.secure.indexOf('/admin/') is path.secure.length - 7
-        if not nonsecurePathIsValid or not securePathIsValid
-          if not nonsecurePathIsValid
-            new Error 'Invalid nonsecure path.'
+        if not securePathIsValid
           if not securePathIsValid
             new Error 'Invalid secure path.'
         else
           _this.path =
-            nonsecure: path.nonsecure
             secure: path.secure
       _this
     
@@ -41,6 +36,13 @@ angular.module 'ngLuminateUtils'
         new Error 'Request data must be a string but was ' + typeof defaultRequestData
       else
         _this.defaultRequestData = defaultRequestData
+      _this
+    
+    _this.setDefaultRequestHandler = (defaultRequestHandler) ->
+      if not angular.isFunction defaultRequestHandler
+        new Error 'Request handler must be a function but was ' + typeof defaultRequestHandler
+      else
+        _this.defaultRequestHandler = defaultRequestHandler
       _this
     
     _this.$get = ->

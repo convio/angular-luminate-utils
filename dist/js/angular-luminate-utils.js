@@ -1,33 +1,27 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.7.1'
+    version: '0.8.0'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
     var _this;
     _this = this;
     _this.setPath = function(path) {
-      var nonsecurePathIsValid, securePathIsValid;
+      var securePathIsValid;
       if (path == null) {
         path = {};
       }
-      if (!angular.isString(path.nonsecure) || !angular.isString(path.secure)) {
-        new Error('You must specify both a nonsecure and secure path.');
+      if (!angular.isString(path.secure)) {
+        new Error('You must specify a secure path.');
       } else {
-        path.nonsecure = path.nonsecure.toLowerCase();
         path.secure = path.secure.toLowerCase();
-        nonsecurePathIsValid = path.nonsecure.indexOf('/site/') === path.nonsecure.length - 6 || path.nonsecure.indexOf('/admin/') === path.nonsecure.length - 7;
         securePathIsValid = path.secure.indexOf('/site/') === path.secure.length - 6 || path.secure.indexOf('/admin/') === path.secure.length - 7;
-        if (!nonsecurePathIsValid || !securePathIsValid) {
-          if (!nonsecurePathIsValid) {
-            new Error('Invalid nonsecure path.');
-          }
+        if (!securePathIsValid) {
           if (!securePathIsValid) {
             new Error('Invalid secure path.');
           }
         } else {
           _this.path = {
-            nonsecure: path.nonsecure,
             secure: path.secure
           };
         }
@@ -57,6 +51,14 @@
         new Error('Request data must be a string but was ' + typeof defaultRequestData);
       } else {
         _this.defaultRequestData = defaultRequestData;
+      }
+      return _this;
+    };
+    _this.setDefaultRequestHandler = function(defaultRequestHandler) {
+      if (!angular.isFunction(defaultRequestHandler)) {
+        new Error('Request handler must be a function but was ' + typeof defaultRequestHandler);
+      } else {
+        _this.defaultRequestHandler = defaultRequestHandler;
       }
       return _this;
     };
@@ -209,7 +211,7 @@
   angular.module('ngLuminateUtils').factory('$luminateRest', [
     '$http', '$q', '$timeout', 'APP_INFO', '$luminateUtilsConfig', '$luminateRequestHandler', function($http, $q, $timeout, APP_INFO, $luminateUtilsConfig, $luminateRequestHandler) {
       return {
-        getAuthToken: function(forceNewToken, useHTTP) {
+        getAuthToken: function(forceNewToken) {
           var _this, requestData;
           _this = this;
           if (!_this.authToken || forceNewToken) {
@@ -232,7 +234,7 @@
           }
         },
         request: function(options) {
-          var _this, apiServlet, contentType, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestData, requestFormData, requestProperties, requestUrl, requiresAuth, settings, useHTTP;
+          var _this, apiServlet, contentType, isAuthTokenRequest, isLoginRequest, isLogoutRequest, ref, requestData, requestFormData, requestProperties, requestUrl, requiresAuth, settings;
           if (options == null) {
             options = {};
           }
@@ -242,15 +244,14 @@
           requestData = settings.data;
           requestFormData = settings.formData;
           requiresAuth = settings.requiresAuth;
-          useHTTP = settings.useHTTP;
           contentType = settings.contentType;
           if ((requestFormData && !contentType) || (contentType != null ? contentType.split(';')[0] : void 0) === 'multipart/form-data') {
             contentType = 'multipart/form-data';
           } else {
             contentType = 'application/x-www-form-urlencoded; charset=UTF-8';
           }
-          if (!$luminateUtilsConfig.path.nonsecure || !$luminateUtilsConfig.path.secure) {
-            return $luminateRequestHandler.rejectInvalidRequest('You must specify both a nonsecure and secure path.');
+          if (!$luminateUtilsConfig.path.secure) {
+            return $luminateRequestHandler.rejectInvalidRequest('You must specify a secure path.');
           } else if (!$luminateUtilsConfig.apiKey) {
             return $luminateRequestHandler.rejectInvalidRequest('You must specify both an API Key.');
           } else {
@@ -280,7 +281,7 @@
                 isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') !== -1;
                 if (!isAuthTokenRequest && !_this.authToken) {
                   if (!_this.authTokenPending) {
-                    return _this.getAuthToken(false, useHTTP).then(function() {
+                    return _this.getAuthToken(false).then(function() {
                       return _this.request(options);
                     });
                   } else {
@@ -289,15 +290,7 @@
                     }, 250);
                   }
                 } else {
-                  if (apiServlet === 'CRDonation' || apiServlet === 'CRTeamraiserAPI') {
-                    useHTTP = false;
-                  }
-                  if (!useHTTP) {
-                    requestUrl = $luminateUtilsConfig.path.secure;
-                  } else {
-                    requestUrl = $luminateUtilsConfig.path.nonsecure;
-                  }
-                  requestUrl += apiServlet;
+                  requestUrl = $luminateUtilsConfig.path.secure + apiServlet;
                   if (_this.routingId) {
                     requestUrl += ';jsessionid=' + _this.routingId;
                   }
@@ -342,10 +335,18 @@
                     var _response;
                     _response = response;
                     if (!isLoginRequest && !isLogoutRequest) {
-                      return _response;
-                    } else {
-                      return _this.getAuthToken(true, useHTTP).then(function() {
+                      if (isAuthTokenRequest || !$luminateUtilsConfig.defaultRequestHandler) {
                         return _response;
+                      } else {
+                        return $luminateUtilsConfig.defaultRequestHandler(_response);
+                      }
+                    } else {
+                      return _this.getAuthToken(true).then(function() {
+                        if (isAuthTokenRequest || !$luminateUtilsConfig.defaultRequestHandler) {
+                          return _response;
+                        } else {
+                          return $luminateUtilsConfig.defaultRequestHandler(_response);
+                        }
                       });
                     }
                   });

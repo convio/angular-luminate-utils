@@ -75,15 +75,12 @@ angular.module('myApp', ['ngLuminateUtils']);
 
 ## Configuration With $luminateUtilsConfig
 
-The library is instantiated using the `$luminateUtilsConfigProvider`. At a minimum, you must set your nonsecure 
-and secure Luminate Online paths, as well as your API Key. **nonsecure** is the path for requests made over HTTP, 
-e.g. "http://www.myorganization.com/site/". **secure** is the path for requests made over HTTPS, e.g. 
-"https://secure2.convio.net/myorg/site/".
+The library is instantiated using the `$luminateUtilsConfigProvider`. At a minimum, you must set your secure 
+Luminate Online path and your API Key.
 
 ``` js
 angular.module('myApp').config(['$luminateUtilsConfigProvider', function($luminateUtilsConfigProvider) {
   $luminateUtilsConfigProvider.setPath({
-    nonsecure: 'http://www.myorganization.com/site/', 
     secure: 'https://secure2.convio.net/myorg/site/'
   }).setKey('123456789');
 }]);
@@ -103,6 +100,18 @@ sub-source codes, using the `setDefaultRequestData` method.
 
 ``` js
 $luminateUtilsConfigProvider.setDefaultRequestData('source=MySourceCode');
+```
+
+You can also specify a default request handler to be used by [$luminateRest](#api-requests-with-luminaterest). The 
+provided function will be used prior to any request-level Promise handlers.
+
+``` js
+$luminateUtilsConfigProvider.setDefaultRequestHandler(function(response) {
+  if (response.data.errorResponse && response.data.errorResponse.code === '5') {
+    $scope.showLoginDialog();
+  }
+  return response;
+});
 ```
 
 To access configuration options after instantiation, simply inject `$luminateUtilsConfig`.
@@ -134,7 +143,6 @@ The `request` method accepts one argument, an options object. It returns a Promi
 | formData     | The FormData object to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
 | requiresAuth | A Boolean indicating whether or not the API method being called requires authentication. If true, an auth token is automatically appended to the request data. |
 | contentType  | The Content-Type for the request, either "application/x-www-form-urlencoded" or "multipart/form-data". If formData is provided, this will default to "multipart/form-data", otherwise "application/x-www-form-urlencoded" is the default. |
-| useHTTP      | By default, all API requests are made over HTTPS. Setting this Boolean to true will cause the request to use HTTP. Some API servlets (namely CRDonationAPI and CRTeamraiserAPI) must always be called over a secure channel, in which case this option is ignored. **Note that this will be deprecated in a future version of this library.** |
 
 ### Examples
 

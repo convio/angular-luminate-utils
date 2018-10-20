@@ -7,7 +7,7 @@ angular.module 'ngLuminateUtils'
     '$luminateUtilsConfig'
     '$luminateRequestHandler'
     ($http, $q, $timeout, APP_INFO, $luminateUtilsConfig, $luminateRequestHandler) ->
-      getAuthToken: (forceNewToken, useHTTP) ->
+      getAuthToken: (forceNewToken) ->
         _this = this
         if not _this.authToken or forceNewToken
           _this.authTokenPending = true
@@ -32,14 +32,13 @@ angular.module 'ngLuminateUtils'
         requestData = settings.data
         requestFormData = settings.formData
         requiresAuth = settings.requiresAuth
-        useHTTP = settings.useHTTP
         contentType = settings.contentType
         if (requestFormData and not contentType) or contentType?.split(';')[0] is 'multipart/form-data'
           contentType = 'multipart/form-data'
         else
           contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
-        if not $luminateUtilsConfig.path.nonsecure or not $luminateUtilsConfig.path.secure
-          $luminateRequestHandler.rejectInvalidRequest 'You must specify both a nonsecure and secure path.'
+        if not $luminateUtilsConfig.path.secure
+          $luminateRequestHandler.rejectInvalidRequest 'You must specify a secure path.'
         else if not $luminateUtilsConfig.apiKey
           $luminateRequestHandler.rejectInvalidRequest 'You must specify both an API Key.'
         else
@@ -66,7 +65,7 @@ angular.module 'ngLuminateUtils'
               isLogoutRequest = ('&' + requestData).indexOf('&method=logout&') isnt -1  
               if not isAuthTokenRequest and not _this.authToken
                 if not _this.authTokenPending
-                  _this.getAuthToken false, useHTTP
+                  _this.getAuthToken false
                     .then ->
                       _this.request options
                 else
@@ -74,13 +73,7 @@ angular.module 'ngLuminateUtils'
                     _this.request options
                   , 250
               else
-                if apiServlet in ['CRDonation', 'CRTeamraiserAPI']
-                  useHTTP = false
-                if not useHTTP
-                  requestUrl = $luminateUtilsConfig.path.secure
-                else
-                  requestUrl = $luminateUtilsConfig.path.nonsecure
-                requestUrl += apiServlet
+                requestUrl = $luminateUtilsConfig.path.secure + apiServlet
                 if _this.routingId
                   requestUrl += ';jsessionid=' + _this.routingId
                 if $luminateUtilsConfig.locale
@@ -113,9 +106,15 @@ angular.module 'ngLuminateUtils'
                   .then (response) ->
                     _response = response
                     if not isLoginRequest and not isLogoutRequest
-                      _response
+                      if isAuthTokenRequest or not $luminateUtilsConfig.defaultRequestHandler
+                        _response
+                      else
+                        $luminateUtilsConfig.defaultRequestHandler _response
                     else
-                      _this.getAuthToken true, useHTTP
+                      _this.getAuthToken true
                         .then ->
-                          _response
+                          if isAuthTokenRequest or not $luminateUtilsConfig.defaultRequestHandler
+                            _response
+                          else
+                            $luminateUtilsConfig.defaultRequestHandler _response
   ]
