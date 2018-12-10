@@ -1,9 +1,8 @@
 angular.module 'ngLuminateUtils'
   .factory '$luminateSessionVar', [
-    '$q'
     '$luminateRequestHandler'
     '$luminateTemplateTag'
-    ($q, $luminateRequestHandler, $luminateTemplateTag) ->
+    ($luminateRequestHandler, $luminateTemplateTag) ->
       get: (sessionVar) ->
         if not angular.isString sessionVar
           $luminateRequestHandler.rejectInvalidRequest 'Session variable name must be a string but was ' + typeof sessionVar

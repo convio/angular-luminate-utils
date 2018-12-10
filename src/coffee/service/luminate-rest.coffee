@@ -48,7 +48,7 @@ angular.module 'ngLuminateUtils'
             if apiServlet.toLowerCase() in ['addressbook', 'advocacy', 'cons', 'content', 'datasync', 'donation', 'group', 'orgevent', 'recurring', 'survey', 'teamraiser']
               apiServlet = 'CR' + apiServlet.toLowerCase().charAt(0).toUpperCase() + apiServlet.toLowerCase().slice(1).toLowerCase() + 'API'
               apiServlet = apiServlet.replace('Addressbook', 'AddressBook').replace('Datasync', 'DataSync').replace 'Orgevent', 'OrgEvent'
-            if apiServlet not in ['CRAddressBookAPI', 'CRAdvocacyAPI', 'CRConsAPI', 'CRContentAPI', 'CRDataSyncAPI', 'CRDonationAPI', 'CRGroupAPI', 'CROrgEventAPI', 'CRRecurringAPI', 'CRSurveyAPI', 'CRTeamraiserAPI']
+            if apiServlet not in ['CRAddressBookAPI', 'SRAddressBookAPI', 'CRAdvocacyAPI', 'SRAdvocacyAPI', 'CRConsAPI', 'SRConsAPI', 'CRContentAPI', 'SRContentAPI', 'CRDataSyncAPI', 'SRDataSyncAPI', 'CRDonationAPI', 'SRDonationAPI', 'CRGroupAPI', 'SRGroupAPI', 'CROrgEventAPI', 'SROrgEventAPI', 'CRRecurringAPI', 'SRRecurringAPI', 'CRSurveyAPI', 'SRSurveyAPI', 'CRTeamraiserAPI', 'SRTeamraiserAPI']
               $luminateRequestHandler.rejectInvalidRequest 'Invalid API servlet ' + apiServlet
             else if requestFormData and not angular.isObject requestFormData
               $luminateRequestHandler.rejectInvalidRequest 'Request formData must be an object but was ' + typeof requestFormData

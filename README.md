@@ -1,7 +1,5 @@
 # angular-luminate-utils
 
-**This library is currently in beta, and significant changes are likely in future versions.**
-
 Luminate Online utilities for AngularJS 1.x apps. At its core, this library is a JavaScript wrapper around the 
 [Luminate Online REST API](http://open.convio.com/api), with some helper functions and other magic sprinkled in. The 
 library includes support for [all major modern browsers](#browser-support), and it can be used both within and 
@@ -138,7 +136,7 @@ The `request` method accepts one argument, an options object. It returns a Promi
 
 | property      | description |
 | ------------ | ----------- |
-| api          | Either a full, case-sensitive API servlet name, e.g. "CRConsAPI", or a case-insensitive shorthand with "CR" and "API" removed, e.g. "cons". |
+| api          | Either a full, case-sensitive API servlet name, e.g. "CRConsAPI" or "SRConsAPI", or a case-insensitive shorthand with "CR" and "API" removed, e.g. "cons". |
 | data         | The data string to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
 | formData     | The FormData object to be sent with the request. api_key, response_format, suppress_response_codes, and v parameters are automatically appended. |
 | requiresAuth | A Boolean indicating whether or not the API method being called requires authentication. If true, an auth token is automatically appended to the request data. |

@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '0.8.0'
+    version: '1.0.1'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
@@ -262,7 +262,7 @@
                 apiServlet = 'CR' + apiServlet.toLowerCase().charAt(0).toUpperCase() + apiServlet.toLowerCase().slice(1).toLowerCase() + 'API';
                 apiServlet = apiServlet.replace('Addressbook', 'AddressBook').replace('Datasync', 'DataSync').replace('Orgevent', 'OrgEvent');
               }
-              if (apiServlet !== 'CRAddressBookAPI' && apiServlet !== 'CRAdvocacyAPI' && apiServlet !== 'CRConsAPI' && apiServlet !== 'CRContentAPI' && apiServlet !== 'CRDataSyncAPI' && apiServlet !== 'CRDonationAPI' && apiServlet !== 'CRGroupAPI' && apiServlet !== 'CROrgEventAPI' && apiServlet !== 'CRRecurringAPI' && apiServlet !== 'CRSurveyAPI' && apiServlet !== 'CRTeamraiserAPI') {
+              if (apiServlet !== 'CRAddressBookAPI' && apiServlet !== 'SRAddressBookAPI' && apiServlet !== 'CRAdvocacyAPI' && apiServlet !== 'SRAdvocacyAPI' && apiServlet !== 'CRConsAPI' && apiServlet !== 'SRConsAPI' && apiServlet !== 'CRContentAPI' && apiServlet !== 'SRContentAPI' && apiServlet !== 'CRDataSyncAPI' && apiServlet !== 'SRDataSyncAPI' && apiServlet !== 'CRDonationAPI' && apiServlet !== 'SRDonationAPI' && apiServlet !== 'CRGroupAPI' && apiServlet !== 'SRGroupAPI' && apiServlet !== 'CROrgEventAPI' && apiServlet !== 'SROrgEventAPI' && apiServlet !== 'CRRecurringAPI' && apiServlet !== 'SRRecurringAPI' && apiServlet !== 'CRSurveyAPI' && apiServlet !== 'SRSurveyAPI' && apiServlet !== 'CRTeamraiserAPI' && apiServlet !== 'SRTeamraiserAPI') {
                 return $luminateRequestHandler.rejectInvalidRequest('Invalid API servlet ' + apiServlet);
               } else if (requestFormData && !angular.isObject(requestFormData)) {
                 return $luminateRequestHandler.rejectInvalidRequest('Request formData must be an object but was ' + typeof requestFormData);
@@ -360,7 +360,7 @@
   ]);
 
   angular.module('ngLuminateUtils').factory('$luminateSessionVar', [
-    '$q', '$luminateRequestHandler', '$luminateTemplateTag', function($q, $luminateRequestHandler, $luminateTemplateTag) {
+    '$luminateRequestHandler', '$luminateTemplateTag', function($luminateRequestHandler, $luminateTemplateTag) {
       return {
         get: function(sessionVar) {
           var templateTag;
