@@ -13,7 +13,7 @@ outside of Luminate Online.
 - [Configuration With $luminateUtilsConfig](#configuration-with-luminateutilsconfig)
 - [API Requests With $luminateRest](#api-requests-with-luminaterest)
 - [A Note on Third-Party Cookies](#a-note-on-third-party-cookies)
-- [Evaluating Template Tages With $luminateTemplateTag](#evaluating-template-tags-with-luminatetemplatetag)
+- [Evaluating Template Tags With $luminateTemplateTag](#evaluating-template-tags-with-luminatetemplatetag)
 - [Managing Session Variables With $luminateSessionVar](#managing-session-variables-with-luminatesessionvar)
 - [Getting Message Catalog Entries With the $luminateMessageCatalog Service](#getting-message-catalog-entries-with-the-luminatemessagecatalog-service)
 - [Including Reusable Content With the luminate-reusable Directive](#including-reusable-content-with-the-luminate-reusable-directive)
@@ -247,7 +247,7 @@ $scope.submitLogin = function() {
 };
 ```
 
-## Evaluating Template Tages With $luminateTemplateTag
+## Evaluating Template Tags With $luminateTemplateTag
 
 For those occasions when the REST API does not provide a method for retrieving some information, but a Luminate 
 Online template tag (e.g. S- or E-Tag) exists that meets the need, the `$luminateTemplateTag` service can be used 
