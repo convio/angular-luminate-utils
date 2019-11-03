@@ -1,3 +1,3 @@
 angular.module 'ngLuminateUtils', []
   .constant 'APP_INFO',
-    version: '1.0.1'
+    version: '1.0.2'

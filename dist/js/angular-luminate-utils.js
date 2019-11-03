@@ -1,6 +1,6 @@
 (function() {
   angular.module('ngLuminateUtils', []).constant('APP_INFO', {
-    version: '1.0.1'
+    version: '1.0.2'
   });
 
   angular.module('ngLuminateUtils').provider('$luminateUtilsConfig', function() {
