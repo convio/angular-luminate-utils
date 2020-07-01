@@ -10,7 +10,7 @@
     }
   ],
   "engines": {
-    "node": "^12.13.0"
+    "node": "^14.5.0"
   },
   "dependencies": {
     "angular": "^1.4.8",
