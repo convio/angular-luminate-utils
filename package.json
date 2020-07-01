@@ -1,7 +1,7 @@
 {
   "name": "angular-luminate-utils",
   "description": "Luminate Online utilities for AngularJS 1.x apps.",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "license": "MIT",
   "repository": [
     {
