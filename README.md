@@ -48,6 +48,12 @@ npm
 npm install angular-luminate-utils
 ```
 
+yarn
+
+```
+yarn add angular-luminate-utils
+```
+
 Or if you're not into package management, just download the latest build under [dist](https://github.com/noahcooper/angular-luminate-utils/blob/master/dist/).
 
 ## Including ngLuminateUtils In Your App
