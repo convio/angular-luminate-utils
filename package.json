@@ -10,7 +10,7 @@
     }
   ],
   "engines": {
-    "node": "^14.16.1"
+    "node": ">=14.16.1"
   },
   "dependencies": {
     "angular": "^1.4.8",
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "coffeescript": "^2.5.1",
-    "glob": "^7.1.6",
+    "glob": "^7.1.7",
     "grunt": "^1.4.0",
     "grunt-cli": "^1.4.2",
     "grunt-contrib-clean": "^2.0.0",
